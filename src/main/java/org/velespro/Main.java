@@ -6,7 +6,9 @@ import org.slf4j.LoggerFactory;
 import com.typesafe.config.*;
 
 import java.io.File;
-import java.util.List;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 
 public class Main {
@@ -19,13 +21,21 @@ public class Main {
 
         Molecule mol = new Molecule("water",config);
 
+        File outputFile = new File("Mis_ficheros/molecule_info.txt");
 
-        System.out.println("Charge: " + mol.getCharge());
-        System.out.println("Multiplicity: " + mol.getMultiplicity());
-
-        System.out.println("Coordinates:");
-        for (List<Object> atom : mol.getCoords()) {
-            System.out.println("  " + atom.getFirst() + " -> " + atom.subList(1, 4));
-        }
+        // ✅ Append mode = true
+        try (PrintWriter writer = new PrintWriter(new FileWriter(outputFile, true))) {
+            writer.println("Molecule: " + mol.getName());
+            writer.println("Charge: " + mol.getCharge());
+            writer.println("Multiplicity: " + mol.getMultiplicity());
+            writer.println("Atoms: " + mol.getNumAtom());
+            writer.println("Coordinates:");
+            for (Molecule.Atom atom : mol.getCoords()) {
+                writer.printf("%-3s %15.6f %15.6f %15.6f%n",
+                        atom.symbol(), atom.x(), atom.y(), atom.z());
+            }
+            writer.println(); // blank line between entries
+        } catch (IOException e) {
+            log.error("Failed to write molecule coordinates to file", e);        }
     }
 }
