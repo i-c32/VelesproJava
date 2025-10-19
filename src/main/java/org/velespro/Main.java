@@ -14,10 +14,10 @@ import java.io.PrintWriter;
 public class Main {
     private static final Logger log = LoggerFactory.getLogger(Main.class);
 
-    static void main() {
+    static void main(String[] args) {
         log.info("Application started");
         // Load file
-        Config config = ConfigFactory.parseFile(new File("Mis_ficheros/input.vel"));
+        Config config = ConfigFactory.parseFile(new File(args[0]));
 
         Molecule mol = new Molecule("water",config);
 
