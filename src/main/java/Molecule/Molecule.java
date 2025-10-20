@@ -12,7 +12,6 @@ public class Molecule {
     private final int numAtom;
     private final int charge;
     private final int multiplicity;
-    public record Atom(String symbol, double x, double y, double z) {}
     private final List<Atom> coords;
 
     public Molecule(String name, Config config) {
@@ -33,7 +32,7 @@ public class Molecule {
                 double y = ((Number) inner.get(2)).doubleValue();
                 double z = ((Number) inner.get(3)).doubleValue();
 
-                // ✅ Convert if in Angstroms
+                // Convert if in Angstroms
                 if (!molec.getBoolean("option.bohr")) {
                     x *= ANGSTROM_TO_BOHR;
                     y *= ANGSTROM_TO_BOHR;
@@ -51,5 +50,5 @@ public class Molecule {
     public int getNumAtom() { return numAtom; }
     public int getCharge() { return charge; }
     public int getMultiplicity() { return multiplicity; }
-    public List<Atom> getCoords() { return coords; }
+    public List<Atom> getAtoms() { return coords; }
 }

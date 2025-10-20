@@ -1,6 +1,7 @@
 package org.velespro;
 
 import Molecule.Molecule;
+import Molecule.Atom;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.typesafe.config.*;
@@ -30,9 +31,9 @@ public class Main {
             writer.println("Multiplicity: " + mol.getMultiplicity());
             writer.println("Atoms: " + mol.getNumAtom());
             writer.println("Coordinates:");
-            for (Molecule.Atom atom : mol.getCoords()) {
+            for (Atom atom : mol.getAtoms()) {
                 writer.printf("%-3s %15.6f %15.6f %15.6f%n",
-                        atom.symbol(), atom.x(), atom.y(), atom.z());
+                        atom.getSymbol(), atom.getX(), atom.getY(), atom.getZ());
             }
             writer.println(); // blank line between entries
         } catch (IOException e) {
