@@ -1,5 +1,6 @@
 package Velespro;
 
+import Integrals.BasisSet;
 import Molecule.Molecule;
 import Molecule.Atom;
 import org.slf4j.Logger;
@@ -16,7 +17,7 @@ import java.util.Set;
 public class Main {
     private static final Logger log = LoggerFactory.getLogger(Main.class);
 
-    static void main(String[] args) {
+    static void main(String[] args) throws IOException {
         log.info("Application started");
         // Load file
         Config config = ConfigFactory.parseFile(new File(args[0]));
@@ -45,5 +46,15 @@ public class Main {
             writer.println(); // blank line between entries
         } catch (IOException e) {
             log.error("Failed to write molecule coordinates to file", e);        }
+
+        File file = new File("src/main/resources/BasisSet/STO-3G");
+        BasisSet sto3g = BasisSet.readBasisSet(file, "STO-3G");
+
+        System.out.println("Loaded basis: " + sto3g.getName());
+        System.out.println("Elements: " + sto3g.getOrbitals("O").size() + " orbitals for Oxygen");
+
+        for (BasisSet.Orbital orb : sto3g.getOrbitals("O")) {
+            System.out.println("  Orbital " + orb.getType() + " (" + orb.getGaussians().size() + " primitives)");
+        }
     }
 }
