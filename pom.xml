@@ -15,9 +15,11 @@
         <slf4j.version>2.0.17</slf4j.version>
         <logback.version>1.5.19</logback.version>
         <typesafe.version>1.4.3</typesafe.version>
+        <junit.version>6.0.0</junit.version>
     </properties>
 
     <dependencies>
+        <!--  Dependecies for logs  -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -32,6 +34,13 @@
             <groupId>com.typesafe</groupId>
             <artifactId>config</artifactId>
             <version>${typesafe.version}</version>
+        </dependency>
+        <!--  Dependecies for test  -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
