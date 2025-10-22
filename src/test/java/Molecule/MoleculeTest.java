@@ -4,6 +4,8 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.junit.jupiter.api.Test;
 import java.util.List;
+import java.util.Set;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 import static Parameter.Parameter.ANGSTROM_TO_BOHR;
@@ -31,8 +33,12 @@ public class MoleculeTest {
         """;
 
         Config config = ConfigFactory.parseString(configStr);
+        Config velConfig = config.getConfig("Velespro");
 
-        Molecule water = new Molecule("water", config);
+        // Get all molecule names under Velespro
+        Set<String> moleculeNames = velConfig.root().keySet();
+
+        Molecule water = new Molecule(moleculeNames.iterator().next(),velConfig);
 
         // ✅ Basic checks
         assertEquals("water", water.getName());

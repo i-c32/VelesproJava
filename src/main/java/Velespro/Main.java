@@ -1,4 +1,4 @@
-package org.velespro;
+package Velespro;
 
 import Molecule.Molecule;
 import Molecule.Atom;
@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Set;
 
 
 public class Main {
@@ -19,8 +20,12 @@ public class Main {
         log.info("Application started");
         // Load file
         Config config = ConfigFactory.parseFile(new File(args[0]));
+        Config velConfig = config.getConfig("Velespro");
 
-        Molecule mol = new Molecule("water",config);
+        // Get all molecule names under Velespro
+        Set<String> moleculeNames = velConfig.root().keySet();
+
+        Molecule mol = new Molecule(moleculeNames.iterator().next(),velConfig);
 
         File outputFile = new File("Mis_ficheros/molecule_info.txt");
 

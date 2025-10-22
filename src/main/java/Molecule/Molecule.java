@@ -20,7 +20,7 @@ public class Molecule {
     public Molecule(String name, Config config) {
         this.name = name;
 
-        Config molec = config.getConfig("Velespro."+name);
+        Config molec = config.getConfig(name);
         this.charge = molec.getInt("charge");
         this.multiplicity = molec.getInt("multiplicity");
         this.numAtom = molec.getInt("num_atom");
