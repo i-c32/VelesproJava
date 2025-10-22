@@ -30,6 +30,8 @@ public class Main {
             writer.println("Charge: " + mol.getCharge());
             writer.println("Multiplicity: " + mol.getMultiplicity());
             writer.println("Atoms: " + mol.getNumAtom());
+            writer.println("Mass: " + mol.getMass());
+            writer.println("Erep: " + mol.getRepEner());
             writer.println("Coordinates:");
             for (Atom atom : mol.getAtoms()) {
                 writer.printf("%-3s %15.6f %15.6f %15.6f%n",
