@@ -103,21 +103,11 @@ public class BasisSet {
         public double getScale() { return scale; }
     }
 
-    public record PrimitiveGaussian(double exponent, double coefficientS, double coefficientP) {
+    public record PrimitiveGaussian(double exponent, double coeffS, double coeffP) {
             // Constructor for S/P/D
             public PrimitiveGaussian(double exponent, double coefficient) {
                 this(exponent, coefficient, 0.0);
             }
-
-        // Constructor for SP
-
-        public double getCoeffS() {
-            return coefficientS;
-        }
-
-        public double getCoeffP() {
-            return coefficientP;
-        }
 
         }
 }

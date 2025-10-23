@@ -1,11 +1,11 @@
 name: Java CI with Maven
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 
-on: [push]
-#  push:
-#    branches: [ $default-branch ]
-#  pull_request:
-#    branches: [ $default-branch ]
+on:
+  push:
+    branches: [ $default-branch ]
+  pull_request:
+    branches: [ $default-branch ]
 
 jobs:
   build:

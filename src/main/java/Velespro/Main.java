@@ -2,6 +2,7 @@ package Velespro;
 
 import Integrals.BasisSet;
 import Molecule.Molecule;
+import Molecule.MoleculeIntegral;
 import Molecule.Atom;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,12 +54,16 @@ public class Main {
         System.out.println("Loaded basis: " + sto3g.getName());
         System.out.println("Elements: " + sto3g.getOrbitals("O").size() + " orbitals for Oxygen");
 
-        for (BasisSet.Orbital orb : sto3g.getOrbitals("H")) {
-            System.out.println("  " + orb.getType() + " (" + orb.getGaussians().size() + " primitives)");
-            for (BasisSet.PrimitiveGaussian g : orb.getGaussians()) {
-                System.out.printf("    %12.8f  %12.8f  %12.8f%n",
-                        g.exponent(), g.getCoeffS(), g.getCoeffP());
-            }
+        MoleculeIntegral molInt = new MoleculeIntegral(sto3g,mol);
+
+        for (Atom.AtomIntegrals atom : molInt.getAtoms()) {
+            System.out.printf("%-3s %15.6f %15.6f %15.6f%n",
+                    atom.symbol(), atom.x(), atom.y(), atom.z());
+            System.out.printf("     Orbital: %-4s%n", atom.orbital());
+            System.out.printf("     Exponents:   %s%n", atom.exponent());
+            System.out.printf("     Coefficients:%s%n", atom.coefficient());
+            System.out.printf("     Cart. Ang.:  %s%n%n", atom.cartAngular());
         }
+        log.info("Application ended");
     }
 }

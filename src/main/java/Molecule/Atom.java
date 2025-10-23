@@ -1,5 +1,6 @@
 package Molecule;
 
+import java.util.List;
 import java.util.Map;
 
 public class Atom {
@@ -264,5 +265,9 @@ public class Atom {
 
     public int getAtNumb() {
         return atomicNumber;
+    }
+
+    public record AtomIntegrals(String symbol, double x, double y, double z,
+                                String orbital, List<Double> exponent, List<Double> coefficient, List<Integer> cartAngular) {
     }
 }
