@@ -3,6 +3,8 @@ package Integrals;
 import java.io.*;
 import java.util.*;
 
+import static Parameter.Parameter.PATH;
+
 public class BasisSet {
     private String name;
     private Map<String, List<Orbital>> elementBasis = new HashMap<>();
@@ -22,8 +24,9 @@ public class BasisSet {
     public String getName() { return name; }
 
     // ✅ Static parser method belongs inside the same class
-    public static BasisSet readBasisSet(File file, String name) throws IOException {
+    public static BasisSet readBasisSet( String name) throws IOException {
         BasisSet basisSet = new BasisSet(name);
+        File file = new File(PATH+name);
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             String currentElement = null;
@@ -53,23 +56,25 @@ public class BasisSet {
                 }
 
                 // Gaussian primitive line
-                if (currentOrbital != null && parts.length >= 3) {
+                if (currentOrbital != null) {
                     double exponent = Double.parseDouble(parts[0]);
-                    double coefficient = Double.parseDouble(parts[1]);
-                    double coefficient1 = Double.parseDouble(parts[2]);
-                    currentOrbital.addPrimitive(exponent, coefficient);
-                    currentOrbital.addPrimitive(exponent, coefficient1);
-                } else if (currentOrbital != null && parts.length == 2) {
-                    double exponent = Double.parseDouble(parts[0]);
-                    double coefficient = Double.parseDouble(parts[1]);
-                    currentOrbital.addPrimitive(exponent, coefficient);
+                    if (currentOrbital.getType().equalsIgnoreCase("SP")) {
+                        // SP: 3 columns — exponent, coeff_S, coeff_P
+                        double coeffS = Double.parseDouble(parts[1]);
+                        double coeffP = Double.parseDouble(parts[2]);
+                        currentOrbital.addPrimitive(exponent, coeffS, coeffP);
+                    } else {
+                        // S/P/D/F: 2 columns — exponent, coeff
+                        double coeff = Double.parseDouble(parts[1]);
+                        currentOrbital.addPrimitive(exponent, coeff);
+                    }
                 }
             }
         }
         return basisSet;
     }
 
-    // Nested helper classes (can also be in their own files)
+    // Nested helper classes
     public static class Orbital {
         private final String type; // S, P, D, SP, etc.
         private final int primitives;
@@ -86,6 +91,11 @@ public class BasisSet {
             gaussians.add(new PrimitiveGaussian(exponent, coefficient));
         }
 
+        // Overload for SP orbitals
+        public void addPrimitive(double exponent, double coeffS, double coeffP) {
+            gaussians.add(new PrimitiveGaussian(exponent, coeffS, coeffP));
+        }
+
         public List<PrimitiveGaussian> getGaussians() { return gaussians; }
 
         public String getType() { return type; }
@@ -93,16 +103,21 @@ public class BasisSet {
         public double getScale() { return scale; }
     }
 
-    public static class PrimitiveGaussian {
-        private final double exponent;
-        private final double coefficient;
+    public record PrimitiveGaussian(double exponent, double coefficientS, double coefficientP) {
+            // Constructor for S/P/D
+            public PrimitiveGaussian(double exponent, double coefficient) {
+                this(exponent, coefficient, 0.0);
+            }
 
-        public PrimitiveGaussian(double exponent, double coefficient) {
-            this.exponent = exponent;
-            this.coefficient = coefficient;
+        // Constructor for SP
+
+        public double getCoeffS() {
+            return coefficientS;
         }
 
-        public double getExponent() { return exponent; }
-        public double getCoefficient() { return coefficient; }
-    }
+        public double getCoeffP() {
+            return coefficientP;
+        }
+
+        }
 }

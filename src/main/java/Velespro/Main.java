@@ -47,14 +47,18 @@ public class Main {
         } catch (IOException e) {
             log.error("Failed to write molecule coordinates to file", e);        }
 
-        File file = new File("src/main/resources/BasisSet/STO-3G");
-        BasisSet sto3g = BasisSet.readBasisSet(file, "STO-3G");
+        String bas = velConfig.getString("water.basis set");
+        BasisSet sto3g = BasisSet.readBasisSet(bas);
 
         System.out.println("Loaded basis: " + sto3g.getName());
         System.out.println("Elements: " + sto3g.getOrbitals("O").size() + " orbitals for Oxygen");
 
-        for (BasisSet.Orbital orb : sto3g.getOrbitals("O")) {
-            System.out.println("  Orbital " + orb.getType() + " (" + orb.getGaussians().size() + " primitives)");
+        for (BasisSet.Orbital orb : sto3g.getOrbitals("H")) {
+            System.out.println("  " + orb.getType() + " (" + orb.getGaussians().size() + " primitives)");
+            for (BasisSet.PrimitiveGaussian g : orb.getGaussians()) {
+                System.out.printf("    %12.8f  %12.8f  %12.8f%n",
+                        g.exponent(), g.getCoeffS(), g.getCoeffP());
+            }
         }
     }
 }
