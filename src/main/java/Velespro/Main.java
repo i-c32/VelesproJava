@@ -1,6 +1,7 @@
 package Velespro;
 
 import Integrals.BasisSet;
+import Integrals.Integrals;
 import Molecule.Molecule;
 import Molecule.MoleculeIntegral;
 import Molecule.Atom;
@@ -51,19 +52,17 @@ public class Main {
         String bas = velConfig.getString("water.basis set");
         BasisSet sto3g = BasisSet.readBasisSet(bas);
 
-        System.out.println("Loaded basis: " + sto3g.getName());
-        System.out.println("Elements: " + sto3g.getOrbitals("O").size() + " orbitals for Oxygen");
-
         MoleculeIntegral molInt = new MoleculeIntegral(sto3g,mol);
 
-        for (Atom.AtomIntegrals atom : molInt.getAtoms()) {
-            System.out.printf("%-3s %15.6f %15.6f %15.6f%n",
-                    atom.symbol(), atom.x(), atom.y(), atom.z());
-            System.out.printf("     Orbital: %-4s%n", atom.orbital());
-            System.out.printf("     Exponents:   %s%n", atom.exponent());
-            System.out.printf("     Coefficients:%s%n", atom.coefficient());
-            System.out.printf("     Cart. Ang.:  %s%n%n", atom.cartAngular());
+        double[][] test = Integrals.intSolapamiento(molInt);
+
+        for (int i = 0; i < test.length; i++) {
+            for (int j = 0; j < test[i].length; j++) {
+                System.out.printf("%6.2f ", test[i][j]);
+            }
+            System.out.println();
         }
+
         log.info("Application ended");
     }
 }

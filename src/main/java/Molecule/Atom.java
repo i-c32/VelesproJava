@@ -267,7 +267,13 @@ public class Atom {
         return atomicNumber;
     }
 
-    public record AtomIntegrals(String symbol, double x, double y, double z,
-                                String orbital, List<Double> exponent, List<Double> coefficient, List<Integer> cartAngular) {
+    public record AtomIntegrals(String symbol, coordinates coord,
+                                String orbital, List<Double> exponent, List<Double> coefficient, angCoordinates cartAngular) {
+    }
+
+    public record coordinates(double x, double y, double z) {
+    }
+
+    public record angCoordinates(int x, int y, int z) {
     }
 }
