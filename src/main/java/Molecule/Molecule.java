@@ -24,16 +24,14 @@ public class Molecule {
         this.charge = molec.getInt("charge");
         this.multiplicity = molec.getInt("multiplicity");
         this.numAtom = molec.getInt("num_atom");
-        List<?> rawList = molec.getAnyRefList("coord");
 
         List<Atom> atomsList = new ArrayList<>();
 
-        for (Object o : rawList) {
-            if (o instanceof List<?> inner) {
-                String symbol = (String) inner.get(0);
-                double x = ((Number) inner.get(1)).doubleValue();
-                double y = ((Number) inner.get(2)).doubleValue();
-                double z = ((Number) inner.get(3)).doubleValue();
+        for (Config atom : molec.getConfigList("coord")) {
+                String element = atom.getString("element");
+                double x = atom.getDouble("x");
+                double y = atom.getDouble("y");
+                double z = atom.getDouble("z");
 
                 // Convert if in Angstroms
                 if (!molec.getBoolean("option.bohr")) {
@@ -42,8 +40,7 @@ public class Molecule {
                     z *= ANGSTROM_TO_BOHR;
                 }
 
-                atomsList.add(new Atom(symbol, x, y, z));
-            }
+                atomsList.add(new Atom(element, x, y, z));
         }
         this.atoms = atomsList;
 
@@ -87,8 +84,7 @@ public class Molecule {
                 double r = dist[i][j];
                 if (r > 1e-12) { // avoid division by zero
                     // Simple approximation: C_ij proportional to atomic numbers
-                    double Cij = a1.getAtNumb() * a2.getAtNumb();
-                    energy += Cij / r; // repulsive term
+                    energy += a1.getAtNumb() * a2.getAtNumb() / r; // repulsive term
                 }
             }
         }

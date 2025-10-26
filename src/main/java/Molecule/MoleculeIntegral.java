@@ -3,10 +3,14 @@ package Molecule;
 import Integrals.BasisSet;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class MoleculeIntegral {
+    private static final Logger log = LoggerFactory.getLogger(MoleculeIntegral.class);
+
     private final List<Atom.AtomIntegrals> atoms;
 
     public MoleculeIntegral(BasisSet basisSet, Molecule mol) {
@@ -28,11 +32,11 @@ public class MoleculeIntegral {
                     coeffP.add(g.coeffP());
                 }
 
-                Atom.coordinates coord = new Atom.coordinates(atom.getX(), atom.getY(), atom.getZ());
-                Atom.angCoordinates cors = new Atom.angCoordinates(0, 0, 0);
-                Atom.angCoordinates corpx = new Atom.angCoordinates(1, 0, 0);
-                Atom.angCoordinates corpy = new Atom.angCoordinates(0, 1, 0);
-                Atom.angCoordinates corpz = new Atom.angCoordinates(0, 0, 1);
+                Atom.Coordinates coord = new Atom.Coordinates(atom.getX(), atom.getY(), atom.getZ());
+                Atom.AngCoordinates cors = new Atom.AngCoordinates(0, 0, 0);
+                Atom.AngCoordinates corpx = new Atom.AngCoordinates(1, 0, 0);
+                Atom.AngCoordinates corpy = new Atom.AngCoordinates(0, 1, 0);
+                Atom.AngCoordinates corpz = new Atom.AngCoordinates(0, 0, 1);
 
                 // Build integrals depending on the orbital type
                 switch (orbType) {
@@ -60,10 +64,8 @@ public class MoleculeIntegral {
                                 "Pz", exponents, coeffP, corpz));
                     }
 
-                    default -> {
-                        // Handle D/F/G orbitals later if needed
-                        System.err.println("Unsupported orbital type: " + orbType);
-                    }
+                    default -> log.error("Unsupported orbital type: {}", orbType);
+
                 }
             }
         }

@@ -6,44 +6,66 @@ import Molecule.MoleculeIntegral;
 import java.util.List;
 
 public class Integrals {
+    private final double[][] overlapInt;
+    private final double[][] kineticInt;
 
-    public static double[][] intSolapamiento(MoleculeIntegral molInt) {
+    // Constructor — builds overlap integral matrix automatically
+    public Integrals(MoleculeIntegral molInt) {
+        this.overlapInt = computeOverlap(molInt);
+        this.kineticInt = computeKinetic(molInt);
+    }
 
+    // Getter integrals matrix
+    public double[][] getOverlapInt() {
+        return overlapInt;
+    }
+    public double[][] getKineticInt() {
+        return kineticInt;
+    }
+
+    public static double[][] computeOverlap(MoleculeIntegral molInt) {
 
         List<Atom.AtomIntegrals> atomInt = molInt.getAtoms();
         int nOrb = atomInt.size();
 
-        double[][] intSolap = new double[nOrb][nOrb];
-        for (Atom.AtomIntegrals atom : molInt.getAtoms()) {
-            System.out.printf("%-3s %15.6f %15.6f %15.6f%n",
-                    atom.symbol(), atom.coord().x(), atom.coord().y(), atom.coord().z());
-            System.out.printf("     Orbital: %-4s%n", atom.orbital());
-            System.out.printf("     Exponents:   %s%n", atom.exponent());
-            System.out.printf("     Coefficients:%s%n", atom.coefficient());
-            System.out.printf("     Cart. Ang.:  %s%n%n", atom.cartAngular());
-        }
+        double[][] intOvelap = new double[nOrb][nOrb];
 
         for (int i = 0; i < nOrb; i++) {
             for (int j = i; j < nOrb; j++) {
-                intSolap[i][j] = solapamiento(atomInt.get(i),atomInt.get(j));
-                intSolap[j][i] = intSolap[i][j];
+                intOvelap[i][j] = overlap(atomInt.get(i),atomInt.get(j));
+                intOvelap[j][i] = intOvelap[i][j];
             }
         }
-        return intSolap;
+        return intOvelap;
     }
 
-    public static double solapamiento(Atom.AtomIntegrals atomInt1,
-                                      Atom.AtomIntegrals atomInt2) {
+    public static double[][] computeKinetic(MoleculeIntegral molInt) {
+
+        List<Atom.AtomIntegrals> atomInt = molInt.getAtoms();
+        int nOrb = atomInt.size();
+
+        double[][] intKinetic = new double[nOrb][nOrb];
+
+        for (int i = 0; i < nOrb; i++) {
+            for (int j = i; j < nOrb; j++) {
+                intKinetic[i][j] = kinetic(atomInt.get(i),atomInt.get(j));
+                intKinetic[j][i] = intKinetic[i][j];
+            }
+        }
+        return intKinetic;
+    }
+
+    public static double overlap(Atom.AtomIntegrals atomInt1,
+                                 Atom.AtomIntegrals atomInt2) {
 
         double resultado = 0.0;
 
-        // Double loop: i=1,a_fin ; j=1,b_fin  (Fortran indices start at 1)
         for (int i = 0; i < atomInt1.exponent().size(); i++) {
             for (int j = 0; j < atomInt2.exponent().size(); j++) {
-                resultado += normOrbital(atomInt1.coefficient().get(i), atomInt1.cartAngular())
-                        * normOrbital(atomInt2.coefficient().get(j), atomInt2.cartAngular())
-                        * atomInt1.exponent().get(i) * atomInt2.exponent().get(j)
-                        * Ov_int(atomInt1.coefficient().get(i), atomInt2.coefficient().get(j), atomInt1.coord(),
+                resultado += normOrbital(atomInt1.exponent().get(i), atomInt1.cartAngular())
+                        * normOrbital(atomInt2.exponent().get(j), atomInt2.cartAngular())
+                        * atomInt1.coefficient().get(i) * atomInt2.coefficient().get(j)
+                        * ovInt(atomInt1.exponent().get(i), atomInt2.exponent().get(j), atomInt1.coord(),
                         atomInt2.coord(), atomInt1.cartAngular(), atomInt2.cartAngular());
             }
         }
@@ -51,52 +73,68 @@ public class Integrals {
         return resultado;
     }
 
-    // === Function: Ov_int ===
-    public static double Ov_int(double orb_c_1, double orb_c_2,
-                                Atom.coordinates coord1, Atom.coordinates coord2,
-                                Atom.angCoordinates CA1, Atom.angCoordinates CA2) {
+    public static double kinetic(Atom.AtomIntegrals atomInt1,
+                                 Atom.AtomIntegrals atomInt2) {
+
+        double resultado = 0.0;
+
+        for (int i = 0; i < atomInt1.exponent().size(); i++) {
+            for (int j = 0; j < atomInt2.exponent().size(); j++) {
+                resultado += normOrbital(atomInt1.exponent().get(i), atomInt1.cartAngular())
+                        * normOrbital(atomInt2.exponent().get(j), atomInt2.cartAngular())
+                        * atomInt1.coefficient().get(i) * atomInt2.coefficient().get(j)
+                        * ovInt(atomInt1.exponent().get(i), atomInt2.exponent().get(j), atomInt1.coord(),
+                        atomInt2.coord(), atomInt1.cartAngular(), atomInt2.cartAngular());
+            }
+        }
+
+        return resultado;
+    }
+
+    public static double ovInt(double orbC1, double orbC2,
+                               Atom.Coordinates coord1, Atom.Coordinates coord2,
+                               Atom.AngCoordinates angCoord1, Atom.AngCoordinates angCoord2) {
 
         double producto = 1.0;
 
         // Product over x, y, z components
-        producto *= s_re(orb_c_1, orb_c_2, coord1.x(), coord2.x(), CA1.x(), CA2.x());
-        producto *= s_re(orb_c_1, orb_c_2, coord1.y(), coord2.y(), CA1.y(), CA2.y());
-        producto *= s_re(orb_c_1, orb_c_2, coord1.z(), coord2.z(), CA1.z(), CA2.z());
+        producto *= sRecurr(orbC1, orbC2, coord1.x(), coord2.x(), angCoord1.x(), angCoord2.x());
+        producto *= sRecurr(orbC1, orbC2, coord1.y(), coord2.y(), angCoord1.y(), angCoord2.y());
+        producto *= sRecurr(orbC1, orbC2, coord1.z(), coord2.z(), angCoord1.z(), angCoord2.z());
 
         // Compute distance squared between coord1 and coord2
         double dist2 = Math.pow(coord1.x() - coord2.x(), 2) +
                 Math.pow(coord1.y() - coord2.y(), 2) +
                 Math.pow(coord1.z() - coord2.z(), 2);
 
-        double EAB = Math.exp(-(orb_c_1 * orb_c_2 / (orb_c_1 + orb_c_2)) * dist2);
-        double overlap = EAB * Math.pow(Math.PI / (orb_c_1 + orb_c_2), 1.5) * producto;
+        double eAB = Math.exp(-(orbC1 * orbC2 / (orbC1 + orbC2)) * dist2);
 
-        return overlap;
+        return eAB * Math.pow(Math.PI / (orbC1 + orbC2), 1.5) * producto;
     }
 
-    public static double s_re(double alpha1, double beta1,
-                              double coord1_1, double coord1_2,
-                              int CA1_1, int CA1_2) {
+    public static double sRecurr(double alpha1, double beta1,
+                                 double coord1, double coord2,
+                                 int angCoord1coord, int angCoord2coord) {
 
         // Base cases
-        if (CA1_1 == 0 && CA1_2 == 0) {
+        if (angCoord1coord == 0 && angCoord2coord == 0) {
             return 1.0;
-        } else if (CA1_1 == 1 && CA1_2 == 0) {
-            return -(coord1_1 - ((alpha1 * coord1_1 + beta1 * coord1_2) / (alpha1 + beta1)));
-        } else if (CA1_1 > 1 && CA1_2 == 0) {
-            double term1 = -(coord1_1 - ((alpha1 * coord1_1 + beta1 * coord1_2) / (alpha1 + beta1)))
-                    * s_re(alpha1, beta1, coord1_1, coord1_2, CA1_1 - 1, CA1_2);
-            double term2 = ((CA1_1 - 1) / (2.0 * (alpha1 + beta1)))
-                    * s_re(alpha1, beta1, coord1_1, coord1_2, CA1_1 - 2, CA1_2);
+        } else if (angCoord1coord == 1 && angCoord2coord == 0) {
+            return -(coord1 - ((alpha1 * coord1 + beta1 * coord2) / (alpha1 + beta1)));
+        } else if (angCoord1coord > 1 && angCoord2coord == 0) {
+            double term1 = -(coord1 - ((alpha1 * coord1 + beta1 * coord2) / (alpha1 + beta1)))
+                    * sRecurr(alpha1, beta1, coord1, coord2, angCoord1coord - 1, angCoord2coord);
+            double term2 = ((angCoord1coord - 1) / (2.0 * (alpha1 + beta1)))
+                    * sRecurr(alpha1, beta1, coord1, coord2, angCoord1coord - 2, angCoord2coord);
             return term1 + term2;
         } else {
-            return s_re(alpha1, beta1, coord1_1, coord1_2, CA1_1 + 1, CA1_2 - 1)
-                    + (coord1_1 - coord1_2)
-                    * s_re(alpha1, beta1, coord1_1, coord1_2, CA1_1, CA1_2 - 1);
+            return sRecurr(alpha1, beta1, coord1, coord2, angCoord1coord + 1, angCoord2coord - 1)
+                    + (coord1 - coord2)
+                    * sRecurr(alpha1, beta1, coord1, coord2, angCoord1coord, angCoord2coord - 1);
         }
     }
 
-    public static double normOrbital(double orbC, Atom.angCoordinates vecA) {
+    public static double normOrbital(double orbC, Atom.AngCoordinates vecA) {
 
         double pi = Math.PI;
         double b = Math.pow((2.0 * orbC / pi), 0.75);
@@ -107,21 +145,6 @@ public class Integrals {
                         * doubleFactorial(2 * vecA.y() - 1)
                         * doubleFactorial(2 * vecA.z() - 1)
         );
-
-//        boolean condition =
-//                (vecA.get(0) > 0 && vecA.get(1) > 0 && vecA.get(2) == 0)
-//                        || (vecA.get(0) > 0 && vecA.get(1) == 0 && vecA.get(2) > 0)
-//                        || (vecA.get(0) == 0 && vecA.get(1) > 0 && vecA.get(2) > 0)
-//                        || (vecA.get(0) > 0 && vecA.get(1) > 0 && vecA.get(2) > 0);
-//
-//        if (condition) {
-//            b /= Math.sqrt(
-//                    doubleFactorial(2 * (vecA.get(0) + vecA.get(1) + vecA.get(2)) - 1)
-//                            / (doubleFactorial(2 * vecA.get(0) - 1)
-//                            * doubleFactorial(2 * vecA.get(1) - 1)
-//                            * doubleFactorial(2 * vecA.get(2) - 1))
-//            );
-//        }
 
         return b;
     }

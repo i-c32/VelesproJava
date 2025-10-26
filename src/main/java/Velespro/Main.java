@@ -54,11 +54,16 @@ public class Main {
 
         MoleculeIntegral molInt = new MoleculeIntegral(sto3g,mol);
 
-        double[][] test = Integrals.intSolapamiento(molInt);
+        // Build overlap integrals object
+        Integrals integrals = new Integrals(molInt);
+
+        // Retrieve the overlap matrix
+        double[][] test = integrals.getOverlapInt();
+
 
         for (int i = 0; i < test.length; i++) {
             for (int j = 0; j < test[i].length; j++) {
-                System.out.printf("%6.2f ", test[i][j]);
+                System.out.printf("%12.9f ", test[i][j]);
             }
             System.out.println();
         }
