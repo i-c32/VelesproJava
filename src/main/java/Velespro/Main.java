@@ -1,7 +1,7 @@
 package Velespro;
 
 import Integrals.BasisSet;
-import Integrals.Integrals;
+import Integrals.OneIntegrals;
 import Molecule.Molecule;
 import Molecule.MoleculeIntegral;
 import Molecule.Atom;
@@ -55,10 +55,10 @@ public class Main {
         MoleculeIntegral molInt = new MoleculeIntegral(sto3g,mol);
 
         // Build overlap integrals object
-        Integrals integrals = new Integrals(molInt);
+        OneIntegrals oneIntegrals = new OneIntegrals(molInt);
 
         // Retrieve the overlap matrix
-        double[][] test = integrals.getOverlapInt();
+        double[][] test = oneIntegrals.getKineticInt();
 
 
         for (int i = 0; i < test.length; i++) {

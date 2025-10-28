@@ -5,12 +5,12 @@ import Molecule.MoleculeIntegral;
 
 import java.util.List;
 
-public class Integrals {
+public class OneIntegrals {
     private final double[][] overlapInt;
     private final double[][] kineticInt;
 
     // Constructor — builds overlap integral matrix automatically
-    public Integrals(MoleculeIntegral molInt) {
+    public OneIntegrals(MoleculeIntegral molInt) {
         this.overlapInt = computeOverlap(molInt);
         this.kineticInt = computeKinetic(molInt);
     }
@@ -83,7 +83,7 @@ public class Integrals {
                 resultado += normOrbital(atomInt1.exponent().get(i), atomInt1.cartAngular())
                         * normOrbital(atomInt2.exponent().get(j), atomInt2.cartAngular())
                         * atomInt1.coefficient().get(i) * atomInt2.coefficient().get(j)
-                        * ovInt(atomInt1.exponent().get(i), atomInt2.exponent().get(j), atomInt1.coord(),
+                        * kinInt(atomInt1.exponent().get(i), atomInt2.exponent().get(j), atomInt1.coord(),
                         atomInt2.coord(), atomInt1.cartAngular(), atomInt2.cartAngular());
             }
         }
@@ -112,6 +112,36 @@ public class Integrals {
         return eAB * Math.pow(Math.PI / (orbC1 + orbC2), 1.5) * producto;
     }
 
+    public static double kinInt(double orbC1, double orbC2,
+                               Atom.Coordinates coord1, Atom.Coordinates coord2,
+                               Atom.AngCoordinates angCoord1, Atom.AngCoordinates angCoord2) {
+
+
+        double producto1 = kiRecurr(orbC1, orbC2, coord1.x(), coord2.x(), angCoord1.x(), angCoord2.x())
+                * sRecurr(orbC1, orbC2, coord1.y(), coord2.y(), angCoord1.y(), angCoord2.y())
+                * sRecurr(orbC1, orbC2, coord1.z(), coord2.z(), angCoord1.z(), angCoord2.z());
+
+        double producto2 = sRecurr(orbC1, orbC2, coord1.x(), coord2.x(), angCoord1.x(), angCoord2.x())
+                * kiRecurr(orbC1, orbC2, coord1.y(), coord2.y(), angCoord1.y(), angCoord2.y())
+                * sRecurr(orbC1, orbC2, coord1.z(), coord2.z(), angCoord1.z(), angCoord2.z());
+
+        double producto3 = sRecurr(orbC1, orbC2, coord1.x(), coord2.x(), angCoord1.x(), angCoord2.x())
+                * sRecurr(orbC1, orbC2, coord1.y(), coord2.y(), angCoord1.y(), angCoord2.y())
+                * kiRecurr(orbC1, orbC2, coord1.z(), coord2.z(), angCoord1.z(), angCoord2.z());
+
+        double suma = producto1 + producto2 + producto3;
+
+        // Distance squared between centers
+        double dist2 = Math.pow(coord1.x() - coord2.x(), 2) +
+                Math.pow(coord1.y() - coord2.y(), 2) +
+                Math.pow(coord1.z() - coord2.z(), 2);
+
+        double EAB = Math.exp(-(orbC1 * orbC2 / (orbC1 + orbC2)) * dist2);
+
+        return EAB * Math.pow(Math.PI / (orbC1 + orbC2), 1.5) * suma;
+
+    }
+
     public static double sRecurr(double alpha1, double beta1,
                                  double coord1, double coord2,
                                  int angCoord1coord, int angCoord2coord) {
@@ -132,6 +162,39 @@ public class Integrals {
                     + (coord1 - coord2)
                     * sRecurr(alpha1, beta1, coord1, coord2, angCoord1coord, angCoord2coord - 1);
         }
+    }
+
+    private static double kiRecurr(double alpha, double beta,
+                                        double coord1, double coord2,
+                                        int CA1, int CA2) {
+
+        double resultado = 0.0;
+
+        // Case 1: both angular momenta are zero
+        if (CA1 == 0 && CA2 == 0) {
+            resultado = 2.0 * alpha * beta * sRecurr(alpha, beta, coord1, coord2, 1, 1);
+
+            // Case 2: CA1 > 0, CA2 == 0
+        } else if (CA1 > 0 && CA2 == 0) {
+            resultado = -CA1 * beta * sRecurr(alpha, beta, coord1, coord2, CA1 - 1, 1)
+                    + 2.0 * alpha * beta * sRecurr(alpha, beta, coord1, coord2, CA1 + 1, 1);
+
+            // Case 3: CA1 == 0, CA2 > 0
+        } else if (CA1 == 0 && CA2 > 0) {
+            resultado = -CA2 * alpha * sRecurr(alpha, beta, coord1, coord2, 1, CA2 - 1)
+                    + 2.0 * alpha * beta * sRecurr(alpha, beta, coord1, coord2, 1, CA2 + 1);
+
+            // Case 4: both CA1 and CA2 > 0
+        } else {
+            resultado = (
+                    (CA1 * CA2 * sRecurr(alpha, beta, coord1, coord2, CA1 - 1, CA2 - 1))
+                            - (2.0 * CA1 * beta * sRecurr(alpha, beta, coord1, coord2, CA1 - 1, CA2 + 1))
+                            - (2.0 * CA2 * alpha * sRecurr(alpha, beta, coord1, coord2, CA1 + 1, CA2 - 1))
+                            + (4.0 * alpha * beta * sRecurr(alpha, beta, coord1, coord2, CA1 + 1, CA2 + 1))
+            ) / 2.0;
+        }
+
+        return resultado;
     }
 
     public static double normOrbital(double orbC, Atom.AngCoordinates vecA) {
