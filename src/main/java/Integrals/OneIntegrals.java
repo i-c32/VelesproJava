@@ -8,11 +8,13 @@ import java.util.List;
 public class OneIntegrals {
     private final double[][] overlapInt;
     private final double[][] kineticInt;
+    private final double[][] potentialInt;
 
     // Constructor — builds overlap integral matrix automatically
     public OneIntegrals(MoleculeIntegral molInt) {
         this.overlapInt = computeOverlap(molInt);
         this.kineticInt = computeKinetic(molInt);
+        this.potentialInt = computeKinetic(molInt);
     }
 
     // Getter integrals matrix
@@ -21,6 +23,9 @@ public class OneIntegrals {
     }
     public double[][] getKineticInt() {
         return kineticInt;
+    }
+    public double[][] getPotentialInt() {
+        return potentialInt;
     }
 
     public static double[][] computeOverlap(MoleculeIntegral molInt) {
@@ -55,7 +60,7 @@ public class OneIntegrals {
         return intKinetic;
     }
 
-    public static double overlap(Atom.AtomIntegrals atomInt1,
+    private static double overlap(Atom.AtomIntegrals atomInt1,
                                  Atom.AtomIntegrals atomInt2) {
 
         double resultado = 0.0;
@@ -73,7 +78,7 @@ public class OneIntegrals {
         return resultado;
     }
 
-    public static double kinetic(Atom.AtomIntegrals atomInt1,
+    private static double kinetic(Atom.AtomIntegrals atomInt1,
                                  Atom.AtomIntegrals atomInt2) {
 
         double resultado = 0.0;
@@ -112,7 +117,7 @@ public class OneIntegrals {
         return eAB * Math.pow(Math.PI / (orbC1 + orbC2), 1.5) * producto;
     }
 
-    public static double kinInt(double orbC1, double orbC2,
+    private static double kinInt(double orbC1, double orbC2,
                                Atom.Coordinates coord1, Atom.Coordinates coord2,
                                Atom.AngCoordinates angCoord1, Atom.AngCoordinates angCoord2) {
 
@@ -142,7 +147,7 @@ public class OneIntegrals {
 
     }
 
-    public static double sRecurr(double alpha1, double beta1,
+    private static double sRecurr(double alpha1, double beta1,
                                  double coord1, double coord2,
                                  int angCoord1coord, int angCoord2coord) {
 
@@ -166,31 +171,31 @@ public class OneIntegrals {
 
     private static double kiRecurr(double alpha, double beta,
                                         double coord1, double coord2,
-                                        int CA1, int CA2) {
+                                        int angCoord1coord, int CA2) {
 
-        double resultado = 0.0;
+        double resultado;
 
         // Case 1: both angular momenta are zero
-        if (CA1 == 0 && CA2 == 0) {
+        if (angCoord1coord == 0 && CA2 == 0) {
             resultado = 2.0 * alpha * beta * sRecurr(alpha, beta, coord1, coord2, 1, 1);
 
-            // Case 2: CA1 > 0, CA2 == 0
-        } else if (CA1 > 0 && CA2 == 0) {
-            resultado = -CA1 * beta * sRecurr(alpha, beta, coord1, coord2, CA1 - 1, 1)
-                    + 2.0 * alpha * beta * sRecurr(alpha, beta, coord1, coord2, CA1 + 1, 1);
+            // Case 2: angCoord1coord > 0, CA2 == 0
+        } else if (angCoord1coord > 0 && CA2 == 0) {
+            resultado = -angCoord1coord * beta * sRecurr(alpha, beta, coord1, coord2, angCoord1coord - 1, 1)
+                    + 2.0 * alpha * beta * sRecurr(alpha, beta, coord1, coord2, angCoord1coord + 1, 1);
 
-            // Case 3: CA1 == 0, CA2 > 0
-        } else if (CA1 == 0 && CA2 > 0) {
+            // Case 3: angCoord1coord == 0, CA2 > 0
+        } else if (angCoord1coord == 0 && CA2 > 0) {
             resultado = -CA2 * alpha * sRecurr(alpha, beta, coord1, coord2, 1, CA2 - 1)
                     + 2.0 * alpha * beta * sRecurr(alpha, beta, coord1, coord2, 1, CA2 + 1);
 
-            // Case 4: both CA1 and CA2 > 0
+            // Case 4: both angCoord1coord and CA2 > 0
         } else {
             resultado = (
-                    (CA1 * CA2 * sRecurr(alpha, beta, coord1, coord2, CA1 - 1, CA2 - 1))
-                            - (2.0 * CA1 * beta * sRecurr(alpha, beta, coord1, coord2, CA1 - 1, CA2 + 1))
-                            - (2.0 * CA2 * alpha * sRecurr(alpha, beta, coord1, coord2, CA1 + 1, CA2 - 1))
-                            + (4.0 * alpha * beta * sRecurr(alpha, beta, coord1, coord2, CA1 + 1, CA2 + 1))
+                    (angCoord1coord * CA2 * sRecurr(alpha, beta, coord1, coord2, angCoord1coord - 1, CA2 - 1))
+                            - (2.0 * angCoord1coord * beta * sRecurr(alpha, beta, coord1, coord2, angCoord1coord - 1, CA2 + 1))
+                            - (2.0 * CA2 * alpha * sRecurr(alpha, beta, coord1, coord2, angCoord1coord + 1, CA2 - 1))
+                            + (4.0 * alpha * beta * sRecurr(alpha, beta, coord1, coord2, angCoord1coord + 1, CA2 + 1))
             ) / 2.0;
         }
 

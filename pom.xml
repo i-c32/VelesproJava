@@ -16,6 +16,7 @@
         <logback.version>1.5.19</logback.version>
         <typesafe.version>1.4.3</typesafe.version>
         <junit.version>6.0.0</junit.version>
+        <mockito.version>5.20.0</mockito.version>
         <jacoco.version>0.8.14</jacoco.version>
     </properties>
 
@@ -41,6 +42,12 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

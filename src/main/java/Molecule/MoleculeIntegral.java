@@ -9,8 +9,6 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-record Orbital(String type, Atom.AngCoordinates corAng){}
-
 public class MoleculeIntegral {
     private static final Logger log = LoggerFactory.getLogger(MoleculeIntegral.class);
 
@@ -18,21 +16,21 @@ public class MoleculeIntegral {
 
     public MoleculeIntegral(BasisSet basisSet, Molecule mol) {
 
-        List<Orbital> orbS = new ArrayList<>();
-        List<Orbital> orbP = new ArrayList<>();
-        List<Orbital> orbSP = new ArrayList<>();
+        List<TypeOrbital> orbS = new ArrayList<>();
+        List<TypeOrbital> orbP = new ArrayList<>();
+        List<TypeOrbital> orbSP = new ArrayList<>();
 
         // Contructor of the orbitals
-        orbS.add(new Orbital("S",new Atom.AngCoordinates(0, 0, 0)));
+        orbS.add(new TypeOrbital("S",new Atom.AngCoordinates(0, 0, 0)));
 
-        orbP.add(new Orbital("Px",new Atom.AngCoordinates(1, 0, 0)));
-        orbP.add(new Orbital("Py",new Atom.AngCoordinates(0, 1, 0)));
-        orbP.add(new Orbital("Pz",new Atom.AngCoordinates(0, 0, 1)));
+        orbP.add(new TypeOrbital("Px",new Atom.AngCoordinates(1, 0, 0)));
+        orbP.add(new TypeOrbital("Py",new Atom.AngCoordinates(0, 1, 0)));
+        orbP.add(new TypeOrbital("Pz",new Atom.AngCoordinates(0, 0, 1)));
 
-        orbSP.add(new Orbital("S",new Atom.AngCoordinates(0, 0, 0)));
-        orbSP.add(new Orbital("Px",new Atom.AngCoordinates(1, 0, 0)));
-        orbSP.add(new Orbital("Py",new Atom.AngCoordinates(0, 1, 0)));
-        orbSP.add(new Orbital("Pz",new Atom.AngCoordinates(0, 0, 1)));
+        orbSP.add(new TypeOrbital("S",new Atom.AngCoordinates(0, 0, 0)));
+        orbSP.add(new TypeOrbital("Px",new Atom.AngCoordinates(1, 0, 0)));
+        orbSP.add(new TypeOrbital("Py",new Atom.AngCoordinates(0, 1, 0)));
+        orbSP.add(new TypeOrbital("Pz",new Atom.AngCoordinates(0, 0, 1)));
 
         List<Atom.AtomIntegrals> atomsList = new ArrayList<>();
 
@@ -56,21 +54,21 @@ public class MoleculeIntegral {
                 // Build integrals depending on the orbital type
                 switch (orbType) {
                     case "S" -> {
-                        for (Orbital o : orbS) {
+                        for (TypeOrbital o : orbS) {
                             atomsList.add(new Atom.AtomIntegrals(
                                     atSymb, coord, o.type(), exponents, coeff1, o.corAng()));
                         }
                     }
 
                     case "P" -> {
-                        for (Orbital o : orbP) {
+                        for (TypeOrbital o : orbP) {
                             atomsList.add(new Atom.AtomIntegrals(
                                     atSymb, coord, o.type(), exponents, coeff1, o.corAng()));
                         }
                     }
 
                     case "SP" -> {
-                        for (Orbital o : orbSP) {
+                        for (TypeOrbital o : orbSP) {
                             if (Objects.equals(o.type(), "S")) {
                                 atomsList.add(new Atom.AtomIntegrals(
                                         atSymb, coord, o.type(), exponents, coeff1, o.corAng()));
@@ -93,4 +91,6 @@ public class MoleculeIntegral {
     public List<Atom.AtomIntegrals> getAtoms() {
         return atoms;
     }
+
+    public record TypeOrbital(String type, Atom.AngCoordinates corAng){}
 }

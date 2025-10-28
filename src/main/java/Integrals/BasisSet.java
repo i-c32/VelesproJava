@@ -23,10 +23,16 @@ public class BasisSet {
 
     public String getName() { return name; }
 
-    // ✅ Static parser method belongs inside the same class
-    public static BasisSet readBasisSet( String name) throws IOException {
+
+    // Original for production use
+    public static BasisSet readBasisSet(String name) throws IOException {
+        return readBasisSet(PATH, name);
+    }
+
+    // Overloaded version for testing or alternative paths
+    public static BasisSet readBasisSet(String directory, String name) throws IOException {
         BasisSet basisSet = new BasisSet(name);
-        File file = new File(PATH+name);
+        File file = new File(directory + name);
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             String currentElement = null;
@@ -104,10 +110,9 @@ public class BasisSet {
     }
 
     public record PrimitiveGaussian(double exponent, double coeffS, double coeffP) {
-            // Constructor for S/P/D
-            public PrimitiveGaussian(double exponent, double coefficient) {
-                this(exponent, coefficient, 0.0);
-            }
-
+        // Constructor for S/P/D
+        public PrimitiveGaussian(double exponent, double coefficient) {
+            this(exponent, coefficient, 0.0);
         }
+    }
 }
