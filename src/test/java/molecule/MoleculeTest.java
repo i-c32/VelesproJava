@@ -1,4 +1,4 @@
-package Molecule;
+package molecule;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -8,7 +8,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import static Parameter.Parameter.ANGSTROM_TO_BOHR;
+import static parameter.Parameter.ANGSTROM_TO_BOHR;
 
 public class MoleculeTest {
 
@@ -33,7 +33,7 @@ public class MoleculeTest {
         """;
 
         Config config = ConfigFactory.parseString(configStr);
-        Config velConfig = config.getConfig("Velespro");
+        Config velConfig = config.getConfig("velespro");
 
         // Get all molecule names under Velespro
         Set<String> moleculeNames = velConfig.root().keySet();

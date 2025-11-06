@@ -1,6 +1,4 @@
-package Parameter;
-
-import java.io.File;
+package parameter;
 
 public class Parameter {
     public static final double ANGSTROM_TO_BOHR = 1.0 / 0.529177210903;

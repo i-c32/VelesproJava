@@ -1,9 +1,9 @@
-package Integrals;
+package integrals;
 
 import java.io.*;
 import java.util.*;
 
-import static Parameter.Parameter.PATH;
+import static parameter.Parameter.PATH;
 
 public class BasisSet {
     private String name;

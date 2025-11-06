@@ -1,12 +1,12 @@
-package Integrals;
+package integrals;
 
-import Molecule.Molecule;
+import molecule.Molecule;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.List;
-import Molecule.Atom;
-import Molecule.MoleculeIntegral;
+import molecule.Atom;
+import molecule.MoleculeIntegral;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;

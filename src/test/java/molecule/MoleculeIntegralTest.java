@@ -1,6 +1,6 @@
-package Molecule;
+package molecule;
 
-import Integrals.BasisSet;
+import integrals.BasisSet;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

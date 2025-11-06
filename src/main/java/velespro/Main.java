@@ -1,10 +1,10 @@
-package Velespro;
+package velespro;
 
-import Integrals.BasisSet;
-import Integrals.OneIntegrals;
-import Molecule.Molecule;
-import Molecule.MoleculeIntegral;
-import Molecule.Atom;
+import integrals.BasisSet;
+import integrals.OneIntegrals;
+import molecule.Molecule;
+import molecule.MoleculeIntegral;
+import molecule.Atom;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.typesafe.config.*;
@@ -23,7 +23,7 @@ public class Main {
         log.info("Application started");
         // Load file
         Config config = ConfigFactory.parseFile(new File(args[0]));
-        Config velConfig = config.getConfig("Velespro");
+        Config velConfig = config.getConfig("velespro");
 
         // Get all molecule names under Velespro
         Set<String> moleculeNames = velConfig.root().keySet();

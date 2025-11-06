@@ -1,6 +1,6 @@
-package Molecule;
+package molecule;
 
-import Integrals.BasisSet;
+import integrals.BasisSet;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,12 +13,16 @@ public class MoleculeIntegral {
     private static final Logger log = LoggerFactory.getLogger(MoleculeIntegral.class);
 
     private final List<Atom.AtomIntegrals> atoms;
+    private final List<Integer> atNumbers;
+    private final List<Atom.Coordinates> nucCoord = new ArrayList<>();
 
     public MoleculeIntegral(BasisSet basisSet, Molecule mol) {
 
         List<TypeOrbital> orbS = new ArrayList<>();
         List<TypeOrbital> orbP = new ArrayList<>();
         List<TypeOrbital> orbSP = new ArrayList<>();
+        List<Integer> atomicNumbers = new ArrayList<>();
+
 
         // Contructor of the orbitals
         orbS.add(new TypeOrbital("S",new Atom.AngCoordinates(0, 0, 0)));
@@ -36,6 +40,8 @@ public class MoleculeIntegral {
 
         for (Atom atom : mol.getAtoms()) {
             String atSymb = atom.getSymbol();
+            int numAtoms = atom.getAtNumb();
+            Atom.Coordinates coord = new Atom.Coordinates(atom.getX(), atom.getY(), atom.getZ());
             for (BasisSet.Orbital orbit : basisSet.getOrbitals(atSymb)) {
                 String orbType = orbit.getType();
 
@@ -48,8 +54,6 @@ public class MoleculeIntegral {
                     coeff1.add(g.coeffS());
                     coeff2.add(g.coeffP());
                 }
-
-                Atom.Coordinates coord = new Atom.Coordinates(atom.getX(), atom.getY(), atom.getZ());
 
                 // Build integrals depending on the orbital type
                 switch (orbType) {
@@ -84,12 +88,23 @@ public class MoleculeIntegral {
 
                 }
             }
+            atomicNumbers.add(numAtoms);
+            this.nucCoord.add(coord);
         }
         this.atoms = atomsList;
+        this.atNumbers = atomicNumbers;
     }
 
     public List<Atom.AtomIntegrals> getAtoms() {
         return atoms;
+    }
+
+    public List<Integer> getAtNumbers() {
+        return atNumbers;
+    }
+
+    public List<Atom.Coordinates> getNucCoord() {
+        return nucCoord;
     }
 
     public record TypeOrbital(String type, Atom.AngCoordinates corAng){}

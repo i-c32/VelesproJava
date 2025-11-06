@@ -1,11 +1,11 @@
-package Molecule;
+package molecule;
 
 import com.typesafe.config.Config;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static Parameter.Parameter.ANGSTROM_TO_BOHR;
+import static parameter.Parameter.ANGSTROM_TO_BOHR;
 
 public class Molecule {
     private final String name;
