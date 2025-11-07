@@ -23,7 +23,7 @@ public class Main {
         log.info("Application started");
         // Load file
         Config config = ConfigFactory.parseFile(new File(args[0]));
-        Config velConfig = config.getConfig("velespro");
+        Config velConfig = config.getConfig("Velespro");
 
         // Get all molecule names under Velespro
         Set<String> moleculeNames = velConfig.root().keySet();
@@ -58,7 +58,7 @@ public class Main {
         OneIntegrals oneIntegrals = new OneIntegrals(molInt);
 
         // Retrieve the overlap matrix
-        double[][] test = oneIntegrals.getKineticInt();
+        double[][] test = oneIntegrals.getPotentialInt();
 
 
         for (int i = 0; i < test.length; i++) {

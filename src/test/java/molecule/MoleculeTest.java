@@ -33,7 +33,7 @@ public class MoleculeTest {
         """;
 
         Config config = ConfigFactory.parseString(configStr);
-        Config velConfig = config.getConfig("velespro");
+        Config velConfig = config.getConfig("Velespro");
 
         // Get all molecule names under Velespro
         Set<String> moleculeNames = velConfig.root().keySet();

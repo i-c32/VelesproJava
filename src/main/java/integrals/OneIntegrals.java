@@ -2,18 +2,40 @@ package integrals;
 
 import molecule.Atom;
 import molecule.MoleculeIntegral;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import parameter.Parameter;
 
 import java.util.List;
 
 public class OneIntegrals {
+    private static final Logger log = LoggerFactory.getLogger(OneIntegrals.class);
+
+    public record AtomData(
+            double orbC1, double orbC2,
+            Atom.Coordinates coord1, Atom.Coordinates coord2, Atom.Coordinates coordNuc,
+            Atom.AngCoordinates angCoord1, Atom.AngCoordinates angCoord2
+    ) {}
+
+    public record AtomCoordData(
+            double orbC1, double orbC2,
+            double coord1, double coord2, double nucCoord,
+            int angCoord1, int angCoord2
+    ) {}
+
     private final double[][] overlapInt;
     private final double[][] kineticInt;
     private final double[][] potentialInt;
 
     // Constructor — builds overlap integral matrix automatically
     public OneIntegrals(MoleculeIntegral molInt) {
+        log.info("Overlap integrals computed");
         this.overlapInt = computeOverlap(molInt);
+
+        log.info("Kinetic integrals computed");
         this.kineticInt = computeKinetic(molInt);
+
+        log.info("Potential integrals computed");
         this.potentialInt = computePotential(molInt);
     }
 
@@ -28,6 +50,7 @@ public class OneIntegrals {
         return potentialInt;
     }
 
+    // Compute overlap integrals matrix
     public static double[][] computeOverlap(MoleculeIntegral molInt) {
 
         List<Atom.AtomIntegrals> atomInt = molInt.getAtoms();
@@ -44,42 +67,8 @@ public class OneIntegrals {
         return intOvelap;
     }
 
-    public static double[][] computeKinetic(MoleculeIntegral molInt) {
-
-        List<Atom.AtomIntegrals> atomInt = molInt.getAtoms();
-        int nOrb = atomInt.size();
-
-        double[][] intKinetic = new double[nOrb][nOrb];
-
-        for (int i = 0; i < nOrb; i++) {
-            for (int j = i; j < nOrb; j++) {
-                intKinetic[i][j] = kinetic(atomInt.get(i),atomInt.get(j));
-                intKinetic[j][i] = intKinetic[i][j];
-            }
-        }
-        return intKinetic;
-    }
-
-    public static double[][] computePotential(MoleculeIntegral molInt) {
-
-        List<Atom.AtomIntegrals> atomInt = molInt.getAtoms();
-        List<Integer> numAtomic = molInt.getAtNumbers();
-        List<Atom.Coordinates> nucCoord = molInt.getNucCoord();
-        int nOrb = atomInt.size();
-
-        double[][] intPotential = new double[nOrb][nOrb];
-
-        for (int i = 0; i < nOrb; i++) {
-            for (int j = i; j < nOrb; j++) {
-                intPotential[i][j] = potential(atomInt.get(i), atomInt.get(j), numAtomic, nucCoord);
-                intPotential[j][i] = intPotential[i][j];
-            }
-        }
-        return intPotential;
-    }
-
     private static double overlap(Atom.AtomIntegrals atomInt1,
-                                 Atom.AtomIntegrals atomInt2) {
+                                  Atom.AtomIntegrals atomInt2) {
 
         double resultado = 0.0;
 
@@ -91,45 +80,6 @@ public class OneIntegrals {
                         * ovInt(atomInt1.exponent().get(i), atomInt2.exponent().get(j), atomInt1.coord(),
                         atomInt2.coord(), atomInt1.cartAngular(), atomInt2.cartAngular());
             }
-        }
-
-        return resultado;
-    }
-
-    private static double kinetic(Atom.AtomIntegrals atomInt1,
-                                 Atom.AtomIntegrals atomInt2) {
-
-        double resultado = 0.0;
-
-        for (int i = 0; i < atomInt1.exponent().size(); i++) {
-            for (int j = 0; j < atomInt2.exponent().size(); j++) {
-                resultado += normOrbital(atomInt1.exponent().get(i), atomInt1.cartAngular())
-                        * normOrbital(atomInt2.exponent().get(j), atomInt2.cartAngular())
-                        * atomInt1.coefficient().get(i) * atomInt2.coefficient().get(j)
-                        * kinInt(atomInt1.exponent().get(i), atomInt2.exponent().get(j), atomInt1.coord(),
-                        atomInt2.coord(), atomInt1.cartAngular(), atomInt2.cartAngular());
-            }
-        }
-
-        return resultado;
-    }
-
-    private static double potential(Atom.AtomIntegrals atomInt1,
-                                  Atom.AtomIntegrals atomInt2, List<Integer> numAtomic, List<Atom.Coordinates> nucCoord) {
-
-        double resultado = 0.0;
-        for (int n = 0; n < nucCoord.size(); n++) {
-            for (int i = 0; i < atomInt1.exponent().size(); i++) {
-                for (int j = 0; j < atomInt2.exponent().size(); j++) {
-                    resultado += normOrbital(atomInt1.exponent().get(i), atomInt1.cartAngular())
-                            * normOrbital(atomInt2.exponent().get(j), atomInt2.cartAngular())
-                            * atomInt1.coefficient().get(i) * atomInt2.coefficient().get(j)
-                            * potInt(atomInt1.exponent().get(i), atomInt2.exponent().get(j),
-                            atomInt1.coord(), atomInt2.coord(), nucCoord.get(n),
-                            atomInt1.cartAngular(), atomInt2.cartAngular());
-                }
-            }
-            resultado *= -numAtomic.get(n);
         }
 
         return resultado;
@@ -156,9 +106,66 @@ public class OneIntegrals {
         return eAB * Math.pow(Math.PI / (orbC1 + orbC2), 1.5) * producto;
     }
 
+    private static double sRecurr(double alpha1, double beta1,
+                                  double coord1, double coord2,
+                                  int angCoord1coord, int angCoord2coord) {
+
+        // Base cases
+        if (angCoord1coord == 0 && angCoord2coord == 0) {
+            return 1.0;
+        } else if (angCoord1coord == 1 && angCoord2coord == 0) {
+            return -(coord1 - ((alpha1 * coord1 + beta1 * coord2) / (alpha1 + beta1)));
+        } else if (angCoord1coord > 1 && angCoord2coord == 0) {
+            double term1 = -(coord1 - ((alpha1 * coord1 + beta1 * coord2) / (alpha1 + beta1)))
+                    * sRecurr(alpha1, beta1, coord1, coord2, angCoord1coord - 1, angCoord2coord);
+            double term2 = ((angCoord1coord - 1) / (2.0 * (alpha1 + beta1)))
+                    * sRecurr(alpha1, beta1, coord1, coord2, angCoord1coord - 2, angCoord2coord);
+            return term1 + term2;
+        } else {
+            return sRecurr(alpha1, beta1, coord1, coord2, angCoord1coord + 1, angCoord2coord - 1)
+                    + (coord1 - coord2)
+                    * sRecurr(alpha1, beta1, coord1, coord2, angCoord1coord, angCoord2coord - 1);
+        }
+    }
+
+    // Compute kinetic integrals matrix
+    public static double[][] computeKinetic(MoleculeIntegral molInt) {
+
+        List<Atom.AtomIntegrals> atomInt = molInt.getAtoms();
+        int nOrb = atomInt.size();
+
+        double[][] intKinetic = new double[nOrb][nOrb];
+
+        for (int i = 0; i < nOrb; i++) {
+            for (int j = i; j < nOrb; j++) {
+                intKinetic[i][j] = kinetic(atomInt.get(i),atomInt.get(j));
+                intKinetic[j][i] = intKinetic[i][j];
+            }
+        }
+        return intKinetic;
+    }
+
+    private static double kinetic(Atom.AtomIntegrals atomInt1,
+                                  Atom.AtomIntegrals atomInt2) {
+
+        double resultado = 0.0;
+
+        for (int i = 0; i < atomInt1.exponent().size(); i++) {
+            for (int j = 0; j < atomInt2.exponent().size(); j++) {
+                resultado += normOrbital(atomInt1.exponent().get(i), atomInt1.cartAngular())
+                        * normOrbital(atomInt2.exponent().get(j), atomInt2.cartAngular())
+                        * atomInt1.coefficient().get(i) * atomInt2.coefficient().get(j)
+                        * kinInt(atomInt1.exponent().get(i), atomInt2.exponent().get(j), atomInt1.coord(),
+                        atomInt2.coord(), atomInt1.cartAngular(), atomInt2.cartAngular());
+            }
+        }
+
+        return resultado;
+    }
+
     private static double kinInt(double orbC1, double orbC2,
-                               Atom.Coordinates coord1, Atom.Coordinates coord2,
-                               Atom.AngCoordinates angCoord1, Atom.AngCoordinates angCoord2) {
+                                 Atom.Coordinates coord1, Atom.Coordinates coord2,
+                                 Atom.AngCoordinates angCoord1, Atom.AngCoordinates angCoord2) {
 
 
         double producto1 = kiRecurr(orbC1, orbC2, coord1.x(), coord2.x(), angCoord1.x(), angCoord2.x())
@@ -183,67 +190,22 @@ public class OneIntegrals {
         double energyAB = Math.exp(-(orbC1 * orbC2 / (orbC1 + orbC2)) * dist2);
 
         return energyAB * Math.pow(Math.PI / (orbC1 + orbC2), 1.5) * suma;
-
-    }
-
-    private static double potInt(double orbC1, double orbC2,
-                                 Atom.Coordinates coord1, Atom.Coordinates coord2, Atom.Coordinates coordNuc,
-                                 Atom.AngCoordinates angCoord1, Atom.AngCoordinates angCoord2) {
-
-        // Distance squared between centers
-        double dist2 = Math.pow(coord1.x() - coord2.x(), 2) +
-                Math.pow(coord1.y() - coord2.y(), 2) +
-                Math.pow(coord1.z() - coord2.z(), 2);
-
-        double enerAB = Math.exp(-(orbC1 * orbC2 / (orbC1 + orbC2)) * dist2);
-
-        return enerAB * 2.0 * Math.PI / (orbC1 + orbC2);
-
-    }
-
-    private static double sRecurr(double alpha1, double beta1,
-                                 double coord1, double coord2,
-                                 int angCoord1coord, int angCoord2coord) {
-
-        // Base cases
-        if (angCoord1coord == 0 && angCoord2coord == 0) {
-            return 1.0;
-        } else if (angCoord1coord == 1 && angCoord2coord == 0) {
-            return -(coord1 - ((alpha1 * coord1 + beta1 * coord2) / (alpha1 + beta1)));
-        } else if (angCoord1coord > 1 && angCoord2coord == 0) {
-            double term1 = -(coord1 - ((alpha1 * coord1 + beta1 * coord2) / (alpha1 + beta1)))
-                    * sRecurr(alpha1, beta1, coord1, coord2, angCoord1coord - 1, angCoord2coord);
-            double term2 = ((angCoord1coord - 1) / (2.0 * (alpha1 + beta1)))
-                    * sRecurr(alpha1, beta1, coord1, coord2, angCoord1coord - 2, angCoord2coord);
-            return term1 + term2;
-        } else {
-            return sRecurr(alpha1, beta1, coord1, coord2, angCoord1coord + 1, angCoord2coord - 1)
-                    + (coord1 - coord2)
-                    * sRecurr(alpha1, beta1, coord1, coord2, angCoord1coord, angCoord2coord - 1);
-        }
     }
 
     private static double kiRecurr(double alpha, double beta,
-                                        double coord1, double coord2,
-                                        int angCoord1coord, int angCoord2coord) {
+                                   double coord1, double coord2,
+                                   int angCoord1coord, int angCoord2coord) {
 
         double resultado;
 
-        // Case 1: both angular momenta are zero
         if (angCoord1coord == 0 && angCoord2coord == 0) {
             resultado = 2.0 * alpha * beta * sRecurr(alpha, beta, coord1, coord2, 1, 1);
-
-            // Case 2: angCoord1coord > 0, angCoord2coord== 0
         } else if (angCoord1coord > 0 && angCoord2coord == 0) {
             resultado = -angCoord1coord * beta * sRecurr(alpha, beta, coord1, coord2, angCoord1coord - 1, 1)
                     + 2.0 * alpha * beta * sRecurr(alpha, beta, coord1, coord2, angCoord1coord + 1, 1);
-
-            // Case 3: angCoord1coord == 0, angCoord2coord > 0
         } else if (angCoord1coord == 0 && angCoord2coord > 0) {
             resultado = -angCoord2coord * alpha * sRecurr(alpha, beta, coord1, coord2, 1, angCoord2coord - 1)
                     + 2.0 * alpha * beta * sRecurr(alpha, beta, coord1, coord2, 1, angCoord2coord + 1);
-
-            // Case 4: both angCoord1coord and CA2 > 0
         } else {
             resultado = (
                     (angCoord1coord * angCoord2coord * sRecurr(alpha, beta, coord1, coord2, angCoord1coord - 1, angCoord2coord - 1))
@@ -256,27 +218,183 @@ public class OneIntegrals {
         return resultado;
     }
 
-    private static double potRecurr(double alpha, double beta,
-                                    double coord1, double coord2,
-                                    int angCoord1coord, int angCoord2coord,
-                                    double nucCoord, double xX) {
+    // Compute potential integrals matrix
+    public static double[][] computePotential(MoleculeIntegral molInt) {
+
+        List<Atom.AtomIntegrals> atomInt = molInt.getAtoms();
+        List<Integer> numAtomic = molInt.getAtNumbers();
+        List<Atom.Coordinates> nucCoord = molInt.getNucCoord();
+        int nOrb = atomInt.size();
+
+        double[][] intPotential = new double[nOrb][nOrb];
+
+        for (int i = 0; i < nOrb; i++) {
+            for (int j = i; j < nOrb; j++) {
+                intPotential[i][j] = potential(atomInt.get(i), atomInt.get(j), numAtomic, nucCoord);
+                intPotential[j][i] = intPotential[i][j];
+            }
+        }
+        return intPotential;
+    }
+
+    private static double potential(Atom.AtomIntegrals atomInt1,
+                                  Atom.AtomIntegrals atomInt2, List<Integer> numAtomic, List<Atom.Coordinates> nucCoord) {
+
+        double resultado = 0.0;
+        for (int n = 0; n < nucCoord.size(); n++) {
+            for (int i = 0; i < atomInt1.exponent().size(); i++) {
+                for (int j = 0; j < atomInt2.exponent().size(); j++) {
+                    AtomData atData = new AtomData(
+                            atomInt1.exponent().get(i), atomInt2.exponent().get(j),
+                            atomInt1.coord(), atomInt2.coord(), nucCoord.get(n),
+                            atomInt1.cartAngular(), atomInt2.cartAngular()
+                    );
+                    resultado += normOrbital(atomInt1.exponent().get(i), atomInt1.cartAngular())
+                            * normOrbital(atomInt2.exponent().get(j), atomInt2.cartAngular())
+                            * atomInt1.coefficient().get(i) * atomInt2.coefficient().get(j)
+                            * potInt(atData);
+                }
+            }
+            resultado *= -numAtomic.get(n);
+        }
+
+        return resultado;
+    }
+
+    private static double potInt(AtomData atData) {
+
+        // Distance squared between centers
+        double dist2 = Math.pow(atData.coord1.x() - atData.coord2.x(), 2) +
+                Math.pow(atData.coord1.y() - atData.coord2.y(), 2) +
+                Math.pow(atData.coord1.z() - atData.coord2.z(), 2);
+
+        double enerAB = Math.exp(-(atData.orbC1 * atData.orbC2 / (atData.orbC1 + atData.orbC2)) * dist2);
+
+        return enerAB * 2.0 * Math.PI / (atData.orbC1 + atData.orbC2) * intChebyshev(atData);
+    }
+
+    public static double intChebyshev(
+            AtomData atData) {
+        final double PI = Math.PI;
+
+        double error = 10.0;
+        int n = 3;
+        int j = 0;
+
+        double varC0 = Math.cos(PI / 6.0);
+        double varS0 = Math.sin(PI / 6.0);
+
+        double varC1 = varS0;
+        double varS1 = varC0;
+
+        double q = (func1(abscissa(2, 1), atData)
+                + func1(-abscissa(2, 1), atData)) * omega(2, 1);
+        double p = func1(0.0, atData);
+        double varCHP = p + q;
+
+        while (error > Parameter.TOL_INTCHEVYCHEV && ((2 * n * (1 - j) + j * 4 * n / 3.0 - 1) <= Parameter.MAX_POINT_INTCHEVYCHEV)) {
+            j = 1 - j;
+
+            varC1 = j * varC1 + (1 - j) * varC0;
+            varS1 = j * varS1 + (1 - j) * varS0;
+            varC0 = j * varC0 + (1 - j) * Math.sqrt((1.0 + varC0) * 0.5);
+            varS0 = j * varS0 + (1 - j) * (varS0 / (varC0 + varC0));
+
+            double varC = varC0;
+            double varS = varS0;
+
+            // Inner loop
+            for (int i = 1; i <= n - 1; i += 2) {
+                double x = 1 + 2.0 / (3.0 * PI) * varS * varC * (3 + 2 * varS * varS) - ((double) i / (double) n);
+
+                if (3 * Math.rint((i + j + j) / 3.0) > (i + j)) {
+                    varCHP += (func1(-x, atData) +
+                            func1(x, atData)) * Math.pow(varS, 4);
+                }
+
+                double temp = varS;
+                varS = varS * varC1 + varC * varS1;
+                varC = varC * varC1 - temp * varS1;
+            }
+
+            n = (1 + j) * n;
+            p = p + (1 - j) * (varCHP - q);
+
+            // Error estimate
+            error = 16 * Math.abs((1 - j) * (q - 3 * p / 2.0) + j * (varCHP - 2 * q)) / (3.0 * n);
+            q = (1 - j) * q + j * varCHP;
+        }
+
+        varCHP = 16 * q / (3.0 * n);
+        return varCHP;
+    }
+
+    private static double func1(double x, AtomData atData) {
+        double[] cons1 = new double[3];
+        cons1[0] = ((atData.orbC1 * atData.coord1.x() + atData.orbC2 * atData.coord2.x()) / (atData.orbC1 + atData.orbC2)) - atData.coordNuc.x();
+        cons1[1] = ((atData.orbC1 * atData.coord1.y() + atData.orbC2 * atData.coord2.y()) / (atData.orbC1 + atData.orbC2)) - atData.coordNuc.y();
+        cons1[2] = ((atData.orbC1 * atData.coord1.z() + atData.orbC2 * atData.coord2.z()) / (atData.orbC1 + atData.orbC2)) - atData.coordNuc.z();
+
+        AtomCoordData atXData = new AtomCoordData(
+                atData.orbC1, atData.orbC2,
+                atData.coord1.x(), atData.coord2.x(), atData.coordNuc.x(),
+                atData.angCoord1.x(), atData.angCoord2.x()
+        );
+
+        AtomCoordData atYData = new AtomCoordData(
+                atData.orbC1, atData.orbC2,
+                atData.coord1.y(), atData.coord2.y(), atData.coordNuc.y(),
+                atData.angCoord1.y(), atData.angCoord2.y()
+        );
+
+        AtomCoordData atZData = new AtomCoordData(
+                atData.orbC1, atData.orbC2,
+                atData.coord1.z(), atData.coord2.z(), atData.coordNuc.z(),
+                atData.angCoord1.z(), atData.angCoord2.z()
+        );
+
+        return 0.5*Math.exp(-((atData.orbC1 + atData.orbC2) * (x + 1) / 2 * dotProduct(cons1, cons1)) / 4.0)
+                * potRecurr(atXData, x) * potRecurr(atYData, x) * potRecurr(atZData, x);
+    }
+
+    private static double potRecurr(AtomCoordData atCData, double x) {
 
         // Case 1: both angular momenta are zero
-        if (angCoord1coord == 0 && angCoord2coord == 0) {
+        if (atCData.angCoord1 == 0 && atCData.angCoord2 == 0) {
             return 1.0;
-        } else if (angCoord1coord == 1 && angCoord2coord == 0) {
-            return -(coord1 - ((alpha * coord1 + beta * coord2) / (alpha + beta))) +
-                    Math.pow((xX+1)/2,2)*((alpha * coord1 + beta * coord2) / (alpha + beta)- nucCoord);
-        } else if (angCoord1coord > 0 && angCoord2coord == 0) {
-            return -(coord1 - ((alpha * coord1 + beta * coord2) / (alpha + beta))) +
-                    Math.pow((xX+1)/2,2)*((alpha * coord1 + beta * coord2) / (alpha + beta)- nucCoord)
-                    * potRecurr(alpha, beta, coord1, coord2, angCoord1coord - 1, angCoord2coord, nucCoord, xX)
-                    +(angCoord1coord - 1)/(2.0*(alpha + beta))*(1 - Math.pow((xX+1)/2,2))
-                    * potRecurr(alpha, beta, coord1, coord2, angCoord1coord - 2, angCoord2coord, nucCoord, xX);
+        } else if (atCData.angCoord1 == 1 && atCData.angCoord2 == 0) {
+            return -(atCData.coord1 - ((atCData.orbC1 * atCData.coord1 + atCData.orbC2 * atCData.coord2) / (atCData.orbC1 + atCData.orbC2))) +
+                    Math.pow((x+1)/2,2)*((atCData.orbC1 * atCData.coord1 + atCData.orbC2 * atCData.coord2) / (atCData.orbC1 + atCData.orbC2)- atCData.nucCoord);
+        } else if (atCData.angCoord1 > 0 && atCData.angCoord2 == 0) {
+            AtomCoordData atCDataM1 = new AtomCoordData(
+                    atCData.orbC1, atCData.orbC2,
+                    atCData.coord1, atCData.coord2, atCData.nucCoord,
+                    atCData.angCoord1 - 1, atCData.angCoord2
+            );
+            AtomCoordData atCDataM2 = new AtomCoordData(
+                    atCData.orbC1, atCData.orbC2,
+                    atCData.coord1, atCData.coord2, atCData.nucCoord,
+                    atCData.angCoord1 -2, atCData.angCoord2
+            );
+            return -(atCData.coord1 - ((atCData.orbC1 * atCData.coord1 + atCData.orbC2 * atCData.coord2) / (atCData.orbC1 + atCData.orbC2))) +
+                    Math.pow((x+1)/2,2)*((atCData.orbC1 * atCData.coord1 + atCData.orbC2 * atCData.coord2) / (atCData.orbC1 + atCData.orbC2)- atCData.nucCoord)
+                    * potRecurr(atCDataM1, x)
+                    +(atCData.angCoord1 - 1)/(2.0*(atCData.orbC1 + atCData.orbC2))*(1 - Math.pow((x + 1) / 2, 2))
+                    * potRecurr(atCDataM2, x);
         } else {
-            return potRecurr(alpha, beta, coord1, coord2, angCoord1coord + 1, angCoord2coord - 1, nucCoord, xX)
-                    + (coord1 - coord2)
-                    * potRecurr(alpha, beta, coord1, coord2, angCoord1coord, angCoord2coord - 1, nucCoord, xX);
+            AtomCoordData atCData1M1 = new AtomCoordData(
+                    atCData.orbC1, atCData.orbC2,
+                    atCData.coord1, atCData.coord2, atCData.nucCoord,
+                    atCData.angCoord1 + 1, atCData.angCoord2 - 1
+            );
+            AtomCoordData atCData0M1 = new AtomCoordData(
+                    atCData.orbC1, atCData.orbC2,
+                    atCData.coord1, atCData.coord2, atCData.nucCoord,
+                    atCData.angCoord1, atCData.angCoord2 - 1
+            );
+            return potRecurr(atCData1M1, x)
+                    + (atCData.coord1 - atCData.coord2)
+                    * potRecurr(atCData0M1, x);
         }
 
     }
@@ -318,87 +436,24 @@ public class OneIntegrals {
         return (16.0 / (3.0*(n + 1)) * Math.pow(Math.sin((i * Math.PI) / (n + 1)), 4));
     }
 
-//    public static double IntChebyshev(double eps, int M) {
-//        final double PI = Math.PI;
-//
-//        int n = 3;
-//        int j = 0;
-//
-//        double C0 = Math.cos(PI / 6.0);
-//        double S0 = Math.sin(PI / 6.0);
-//
-//        double C1 = S0;
-//        double S1 = C0;
-//
-//        double q = (func1(abscissa(2, 1)) + func1(-abscissa(2, 1))) * omega(2, 1);
-//        double p = func1(0.0);
-//        double CHP = p + q;
-//
-//        double error = 10.0;
-//
-//        while (error > eps && ((2 * n * (1 - j) + j * 4 * n / 3 - 1) <= M)) {
-//            j = 1 - j;
-//
-//            C1 = j * C1 + (1 - j) * C0;
-//            S1 = j * S1 + (1 - j) * S0;
-//            C0 = j * C0 + (1 - j) * Math.sqrt((1.0 + C0) * 0.5);
-//            S0 = j * S0 + (1 - j) * (S0 / (C0 + C0));
-//
-//            double C = C0;
-//            double S = S0;
-//
-//            // Inner loop
-//            for (int i = 1; i <= n - 1; i += 2) {
-//                double x = 1 + 2.0 / (3.0 * PI) * S * C * (3 + 2 * S * S) - ((double) i / (double) n);
-//
-//                if (3 * Math.rint((i + j + j) / 3.0) > (i + j)) {
-//                    CHP += (func1(-x) + func1(x)) * Math.pow(S, 4);
-//                }
-//
-//                double temp = S;
-//                S = S * C1 + C * S1;
-//                C = C * C1 - temp * S1;
-//            }
-//
-//            n = (1 + j) * n;
-//            p = p + (1 - j) * (CHP - q);
-//
-//            // Error estimate
-//            error = 16 * Math.abs((1 - j) * (q - 3 * p / 2.0) + j * (CHP - 2 * q)) / (3.0 * n);
-//            q = (1 - j) * q + j * CHP;
-//        }
-//
-//        CHP = 16 * q / (3.0 * n);
-//        return CHP;
-//    }
-//
-//    private static double func1(double x, double alpha, double beta,
-//                                double[] coord1, double[] coord2, double[] coordNuc) {
-//        double[] cons1 = new double[3];
-//        for (int i = 0; i < 3; i++) {
-//            cons1[i] = ((alpha * coord1[i] + beta * coord2[i]) / (alpha + beta)) - coordNuc[i];
-//        }
-//        return 0.5*Math.exp(-((alpha+beta)*(x+1)/2*dotProduct(cons1,cons1))/4.0);
-//    }
-//
-//    /**
-//     * Computes the dot product of two vectors of the same length.
-//     *
-//     * @param a first vector
-//     * @param b second vector
-//     * @return dot product a · b
-//     * @throws IllegalArgumentException if vectors have different lengths
-//     */
-//    public static double dotProduct(double[] a, double[] b) {
-//        if (a.length != b.length) {
-//            throw new IllegalArgumentException("Vectors must have the same length");
-//        }
-//
-//        double sum = 0.0;
-//        for (int i = 0; i < a.length; i++) {
-//            sum += a[i] * b[i];
-//        }
-//        return sum;
-//    }
+    /**
+     * Computes the dot product of two vectors of the same length.
+     *
+     * @param vecA first vector
+     * @param vecB second vector
+     * @return dot product vecA · vecB
+     * @throws IllegalArgumentException if vectors have different lengths
+     */
+    public static double dotProduct(double[] vecA, double[] vecB) {
+        if (vecA.length != vecB.length) {
+            throw new IllegalArgumentException("Vectors must have the same length");
+        }
+
+        double sum = 0.0;
+        for (int i = 0; i < vecA.length; i++) {
+            sum += vecA[i] * vecB[i];
+        }
+        return sum;
+    }
 
 }
