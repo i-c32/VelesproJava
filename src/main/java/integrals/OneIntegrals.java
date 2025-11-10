@@ -19,8 +19,7 @@ public class OneIntegrals {
 
     public record AtomCoordData(
             double orbC1, double orbC2,
-            double coord1, double coord2, double nucCoord,
-            int angCoord1, int angCoord2
+            double coord1, double coord2, double nucCoord
     ) {}
 
     private final double[][] overlapInt;
@@ -249,13 +248,12 @@ public class OneIntegrals {
                             atomInt1.coord(), atomInt2.coord(), nucCoord.get(n),
                             atomInt1.cartAngular(), atomInt2.cartAngular()
                     );
-                    resultado += normOrbital(atomInt1.exponent().get(i), atomInt1.cartAngular())
+                    resultado += -numAtomic.get(n)*normOrbital(atomInt1.exponent().get(i), atomInt1.cartAngular())
                             * normOrbital(atomInt2.exponent().get(j), atomInt2.cartAngular())
                             * atomInt1.coefficient().get(i) * atomInt2.coefficient().get(j)
                             * potInt(atData);
                 }
             }
-            resultado *= -numAtomic.get(n);
         }
 
         return resultado;
@@ -325,7 +323,7 @@ public class OneIntegrals {
             q = (1 - j) * q + j * varCHP;
         }
 
-        varCHP = 16 * q / (3.0 * n);
+        varCHP = 16 * q / (3 * n);
         return varCHP;
     }
 
@@ -337,64 +335,47 @@ public class OneIntegrals {
 
         AtomCoordData atXData = new AtomCoordData(
                 atData.orbC1, atData.orbC2,
-                atData.coord1.x(), atData.coord2.x(), atData.coordNuc.x(),
-                atData.angCoord1.x(), atData.angCoord2.x()
+                atData.coord1.x(), atData.coord2.x(), atData.coordNuc.x()
         );
 
         AtomCoordData atYData = new AtomCoordData(
                 atData.orbC1, atData.orbC2,
-                atData.coord1.y(), atData.coord2.y(), atData.coordNuc.y(),
-                atData.angCoord1.y(), atData.angCoord2.y()
+                atData.coord1.y(), atData.coord2.y(), atData.coordNuc.y()
         );
 
         AtomCoordData atZData = new AtomCoordData(
                 atData.orbC1, atData.orbC2,
-                atData.coord1.z(), atData.coord2.z(), atData.coordNuc.z(),
-                atData.angCoord1.z(), atData.angCoord2.z()
+                atData.coord1.z(), atData.coord2.z(), atData.coordNuc.z()
         );
 
-        return 0.5*Math.exp(-((atData.orbC1 + atData.orbC2) * (x + 1) / 2 * dotProduct(cons1, cons1)) / 4.0)
-                * potRecurr(atXData, x) * potRecurr(atYData, x) * potRecurr(atZData, x);
+        return 0.5*Math.exp(-((atData.orbC1 + atData.orbC2) * Math.pow((x + 1) / 2,2) * dotProduct(cons1, cons1)))
+                * potRecurr(atXData, atData.angCoord1.x(), atData.angCoord2.x(), x)
+                * potRecurr(atYData, atData.angCoord1.y(), atData.angCoord2.y(), x)
+                * potRecurr(atZData, atData.angCoord1.z(), atData.angCoord2.z(), x);
     }
 
-    private static double potRecurr(AtomCoordData atCData, double x) {
+    private static double potRecurr(AtomCoordData atCData, int angCoord1, int angCoord2, double x) {
+
+        final double orbSum = atCData.orbC1 + atCData.orbC2;
+        final double weightedCenter = (atCData.orbC1 * atCData.coord1 + atCData.orbC2 * atCData.coord2) / orbSum;
+        final double t = (x + 1) / 2;
 
         // Case 1: both angular momenta are zero
-        if (atCData.angCoord1 == 0 && atCData.angCoord2 == 0) {
+        if (angCoord1 == 0 && angCoord2 == 0) {
             return 1.0;
-        } else if (atCData.angCoord1 == 1 && atCData.angCoord2 == 0) {
-            return -(atCData.coord1 - ((atCData.orbC1 * atCData.coord1 + atCData.orbC2 * atCData.coord2) / (atCData.orbC1 + atCData.orbC2))) +
-                    Math.pow((x+1)/2,2)*((atCData.orbC1 * atCData.coord1 + atCData.orbC2 * atCData.coord2) / (atCData.orbC1 + atCData.orbC2)- atCData.nucCoord);
-        } else if (atCData.angCoord1 > 0 && atCData.angCoord2 == 0) {
-            AtomCoordData atCDataM1 = new AtomCoordData(
-                    atCData.orbC1, atCData.orbC2,
-                    atCData.coord1, atCData.coord2, atCData.nucCoord,
-                    atCData.angCoord1 - 1, atCData.angCoord2
-            );
-            AtomCoordData atCDataM2 = new AtomCoordData(
-                    atCData.orbC1, atCData.orbC2,
-                    atCData.coord1, atCData.coord2, atCData.nucCoord,
-                    atCData.angCoord1 -2, atCData.angCoord2
-            );
-            return -(atCData.coord1 - ((atCData.orbC1 * atCData.coord1 + atCData.orbC2 * atCData.coord2) / (atCData.orbC1 + atCData.orbC2))) +
-                    Math.pow((x+1)/2,2)*((atCData.orbC1 * atCData.coord1 + atCData.orbC2 * atCData.coord2) / (atCData.orbC1 + atCData.orbC2)- atCData.nucCoord)
-                    * potRecurr(atCDataM1, x)
-                    +(atCData.angCoord1 - 1)/(2.0*(atCData.orbC1 + atCData.orbC2))*(1 - Math.pow((x + 1) / 2, 2))
-                    * potRecurr(atCDataM2, x);
+        } else if (angCoord1 == 1 && angCoord2 == 0) {
+            return -(atCData.coord1 - weightedCenter +
+                    Math.pow(t,2)*(weightedCenter - atCData.nucCoord));
+        } else if (angCoord1 > 1 && angCoord2 == 0) {
+            return -(atCData.coord1 - weightedCenter +
+                    Math.pow(t,2)*(weightedCenter - atCData.nucCoord))
+                    * potRecurr(atCData, angCoord1 - 1, angCoord2, x)
+                    +(angCoord1 - 1)/(2.0*(atCData.orbC1 + atCData.orbC2))*(1 - Math.pow(t, 2))
+                    * potRecurr(atCData, angCoord1 -2, angCoord2, x);
         } else {
-            AtomCoordData atCData1M1 = new AtomCoordData(
-                    atCData.orbC1, atCData.orbC2,
-                    atCData.coord1, atCData.coord2, atCData.nucCoord,
-                    atCData.angCoord1 + 1, atCData.angCoord2 - 1
-            );
-            AtomCoordData atCData0M1 = new AtomCoordData(
-                    atCData.orbC1, atCData.orbC2,
-                    atCData.coord1, atCData.coord2, atCData.nucCoord,
-                    atCData.angCoord1, atCData.angCoord2 - 1
-            );
-            return potRecurr(atCData1M1, x)
+            return potRecurr(atCData, angCoord1 + 1, angCoord2 - 1, x)
                     + (atCData.coord1 - atCData.coord2)
-                    * potRecurr(atCData0M1, x);
+                    * potRecurr(atCData, angCoord1, angCoord2 - 1, x);
         }
 
     }
@@ -433,7 +414,8 @@ public class OneIntegrals {
     }
 
     public static double omega(int n, int i) {
-        return (16.0 / (3.0*(n + 1)) * Math.pow(Math.sin((i * Math.PI) / (n + 1)), 4));
+        int divInt = 16 / (3*(n + 1));
+        return divInt * Math.pow(Math.sin((i * Math.PI) / (n + 1)), 4);
     }
 
     /**
