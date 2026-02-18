@@ -54,6 +54,19 @@
 
     <build>
         <plugins>
+            <!-- include the main manifest in the build-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.1</version> <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <mainClass>velespro.Main</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
             <!-- ✅ JaCoCo code coverage plugin -->
             <plugin>
                 <groupId>org.jacoco</groupId>
